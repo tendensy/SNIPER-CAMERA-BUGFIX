@@ -1,0 +1,719 @@
+//AIMSTUFF.CPP
+#include "main.h"
+#include "game.h"
+
+uint8_t *pbyteCurrentPlayer = nullptr;
+
+uint8_t *pbyteCameraMode = nullptr;
+uint16_t *wCameraMode2 = nullptr;
+float *pfCameraExtZoom = nullptr;
+float *pfAspectRatio = nullptr;
+CAMERA_AIM *pcaInternalAim = nullptr;
+
+CAMERA_AIM caLocalPlayerAim;
+CAMERA_AIM caRemotePlayerAim[PLAYER_PED_SLOTS];
+uint8_t byteCameraMode[PLAYER_PED_SLOTS];
+float fCameraExtZoom[PLAYER_PED_SLOTS];
+float fLocalCameraExtZoom;
+float fCameraAspectRatio[PLAYER_PED_SLOTS];
+float fLocalAspectRatio;
+
+void GameAimSyncInit()
+{
+	memset(&caLocalPlayerAim, 0, sizeof(CAMERA_AIM));
+	memset(caRemotePlayerAim, 0, sizeof(CAMERA_AIM) * PLAYER_PED_SLOTS);
+	memset(byteCameraMode, 4, PLAYER_PED_SLOTS);
+	memset(fCameraAspectRatio, 0, PLAYER_PED_SLOTS);
+	memset(fCameraExtZoom, 1, PLAYER_PED_SLOTS);
+
+	pcaInternalAim = (CAMERA_AIM*)(g_libGTASA+0x8B0AE0);
+	pbyteCameraMode = (uint8_t*)(g_libGTASA+0x8B0808+0x17E);
+	wCameraMode2 = (uint16_t*)(g_libGTASA+0x8B0808+0x7B4);
+	pfAspectRatio = (float*)(g_libGTASA+0x98525C);
+	pfCameraExtZoom = (float*)(g_libGTASA+0x8B0808+0x1FC);
+	pbyteCurrentPlayer = (uint8_t*)(g_libGTASA+0x8E864C);
+}
+
+CAMERA_AIM* GameGetInternalAim()
+{
+	return pcaInternalAim;
+}
+
+uint8_t GameGetLocalPlayerCameraMode()
+{
+	return *pbyteCameraMode;
+}
+
+float GameGetAspectRatio()
+{
+	return *pfAspectRatio;
+}
+
+float GameGetLocalPlayerCameraExtZoom()
+{
+	float value = ((*pfCameraExtZoom) - 35.0f) / 35.0f;	// normalize for 70.0 to 35.0
+	return value;
+}
+
+void GameStoreLocalPlayerCameraExtZoom()
+{
+	fLocalCameraExtZoom = *pfCameraExtZoom;
+	fLocalAspectRatio = *pfAspectRatio;
+}
+
+void GameSetRemotePlayerCameraExtZoom(int iPlayerNum)
+{
+	float fZoom = fCameraExtZoom[iPlayerNum];
+	float fValue = fZoom * 35.0f + 35.0f; // unnormalize for 35.0 to 70.0
+	*pfCameraExtZoom = fValue;
+	*pfAspectRatio = fCameraAspectRatio[iPlayerNum]+1;
+}
+
+uint8_t GameGetPlayerCameraMode(int iPlayerNum)
+{
+	return byteCameraMode[iPlayerNum];
+}
+
+void GameStoreLocalPlayerAim()
+{
+	memcpy(&caLocalPlayerAim, pcaInternalAim, sizeof(CAMERA_AIM));
+}
+
+void GameSetRemotePlayerAim(int iPlayerNum)
+{
+	memcpy(pcaInternalAim, &caRemotePlayerAim[iPlayerNum], sizeof(CAMERA_AIM));
+}
+
+CAMERA_AIM * GameGetRemotePlayerAim(int iPlayerNum)
+{
+	return &caRemotePlayerAim[iPlayerNum];
+}
+
+void GameSetLocalPlayerCameraExtZoom()
+{
+	*pfCameraExtZoom = fLocalCameraExtZoom;
+	*pfAspectRatio = fLocalAspectRatio;
+}
+
+void GameSetLocalPlayerAim()
+{
+	memcpy(pcaInternalAim, &caLocalPlayerAim, sizeof(CAMERA_AIM));
+}
+
+void GameSetPlayerCameraMode(uint8_t byteMode, int iPlayerNum)
+{
+	byteCameraMode[iPlayerNum] = byteMode;
+}
+
+void GameStoreRemotePlayerAim(int iPlayerNum, CAMERA_AIM* pAim)
+{
+	memcpy(&caRemotePlayerAim[iPlayerNum], pAim, sizeof(CAMERA_AIM));
+}
+
+void GameSetPlayerCameraExtZoom(int iPlayerNum, float fExtZoom, float fAspectRatio)
+{
+	fCameraExtZoom[iPlayerNum] = fExtZoom;
+	fCameraAspectRatio[iPlayerNum] = fAspectRatio;
+}
+
+void GameSetLocalPlayerSkills()
+{
+	
+}
+
+void GameSetRemotePlayerSkills(int iPlayerNum)
+{
+	
+}
+
+void GameStoreLocalPlayerSkills()
+{
+	
+}
+
+void GameStoreRemotePlayerSkill(int iPlayerNum, int iSkillType, uint16_t iSkillLevel)
+{
+	
+}
+
+void GameUpdateLocalPlayerSkill(int iSkillType, uint16_t iSkillLevel)
+{
+	
+}
+
+//AIMSTUFF.H
+#pragma once
+
+typedef struct _CAMERA_AIM
+{
+	float f1x, f1y, f1z;
+	float pos1x, pos1y, pos1z;
+	float pos2x, pos2y, pos2z;
+	float f2x, f2y, f2z;
+} CAMERA_AIM;
+
+extern uint8_t *pbyteCurrentPlayer;
+
+extern uint8_t *pbyteCameraMode;
+extern uint16_t *wCameraMode2;
+extern float *pfCameraExtZoom;
+
+CAMERA_AIM* GameGetInternalAim();
+uint8_t GameGetLocalPlayerCameraMode();
+float GameGetAspectRatio();
+float GameGetLocalPlayerCameraExtZoom();
+
+void GameAimSyncInit();
+
+void GameStoreLocalPlayerCameraExtZoom();
+uint8_t GameGetPlayerCameraMode(int iPlayerNum);
+void GameSetRemotePlayerCameraExtZoom(int iPlayerNum);
+void GameStoreLocalPlayerAim();
+void GameSetRemotePlayerAim(int iPlayerNum);
+CAMERA_AIM * GameGetRemotePlayerAim(int iPlayerNum);
+void GameSetLocalPlayerCameraExtZoom();
+void GameSetLocalPlayerAim();
+void GameSetPlayerCameraMode(uint8_t byteMode, int iPlayerNum);
+void GameStoreRemotePlayerAim(int iPlayerNum, CAMERA_AIM *pAim);
+void GameSetPlayerCameraExtZoom(int iPlayerNum, float fExtZoom, float fAspectRatio);
+
+void GameSetLocalPlayerSkills();
+void GameSetRemotePlayerSkills(int iPlayerNum);
+void GameStoreLocalPlayerSkills();
+void GameStoreRemotePlayerSkill(int iPlayerNum, int iSkillType, uint16_t iSkillLevel);
+void GameUpdateLocalPlayerSkill(int iSkillType, uint16_t iSkillLevel);
+
+
+//PAD
+uint32_t(*CPad__GetEnterTargeting)(uintptr_t thiz);
+uint32_t CPad__GetEnterTargeting_hook(uintptr_t thiz)
+{
+	uint8_t byteCurrentPlayer = byteCurPlayer;
+	if(dwCurPlayerActor)
+	{
+		if(byteCurPlayer != 0)
+			return RemotePlayerKeys[byteCurPlayer].bKeys[ePadKeys::KEY_HANDBRAKE];
+
+		byteCurrentPlayer = 0;
+	}
+
+	uint8_t old = *pbyteCurrentPlayer;
+	*pbyteCurrentPlayer = byteCurrentPlayer;
+
+	uint32_t result = CPad__GetEnterTargeting(thiz);
+	LocalPlayerKeys.bKeys[ePadKeys::KEY_HANDBRAKE] = result ? 1 : 0;
+
+	*pbyteCurrentPlayer = old;
+
+	return LocalPlayerKeys.bKeys[ePadKeys::KEY_HANDBRAKE];
+}
+
+bool (*CPad__GetWeapon)(uintptr_t thiz, PED_TYPE* pPed);
+bool CPad__GetWeapon_hook(uintptr_t thiz, PED_TYPE *pPed)
+{
+	if(dwCurPlayerActor && (byteCurPlayer != 0)) {
+		return RemotePlayerKeys[byteCurPlayer].bKeys[ePadKeys::KEY_FIRE];
+	} else {
+		LocalPlayerKeys.bKeys[ePadKeys::KEY_FIRE] = CPad__GetWeapon(thiz, pPed);
+		return LocalPlayerKeys.bKeys[ePadKeys::KEY_FIRE];
+	}
+}
+
+void CTaskSimpleUseGun__SetPedPosition_hook(uintptr_t thiz, PED_TYPE* pPed)
+{
+	//Log("CTaskSimpleUseGun__SetPedPosition");
+	dwCurPlayerActor = (uintptr_t)pPed;
+	byteCurPlayer = FindPlayerNumFromPedPtr((uintptr_t)pPed);
+	byteInternalPlayer = *pbyteCurrentPlayer;
+
+	if (dwCurPlayerActor && (byteCurPlayer != 0) && 
+		byteInternalPlayer == 0) // not local player and local player's keys set.
+	{
+		// remote player
+		
+		// save the internal cammode, apply the context.
+		byteSavedCameraMode = *pbyteCameraMode;
+		*pbyteCameraMode = GameGetPlayerCameraMode(byteCurPlayer);
+		
+		// save the second internal cammode, apply the context
+		wSavedCameraMode2 = *wCameraMode2;
+		*wCameraMode2 = GameGetPlayerCameraMode(byteCurPlayer);
+		if(*wCameraMode2 == 4) *wCameraMode2 = 0;
+		
+		// save the camera zoom factor, apply the context
+		GameStoreLocalPlayerCameraExtZoom();
+		GameSetRemotePlayerCameraExtZoomAnd(byteCurPlayer);
+		
+		// aim switching
+		GameStoreLocalPlayerAim();
+		GameSetRemotePlayerAim(byteCurPlayer);
+		GameStoreLocalPlayerSkills();
+		GameSetRemotePlayerSkills(byteCurPlayer);
+		
+		*pbyteCurrentPlayer = byteCurPlayer;
+
+		// CTaskSimpleUseGun::SetPedPosition()
+		(( void (*)(uintptr_t, PED_TYPE *))(g_libGTASA+0x46D6AC+1))(thiz, pPed);
+		
+		// restore the camera modes, internal id and local player's aim
+		*pbyteCameraMode = byteSavedCameraMode;
+		*wCameraMode2 = wSavedCameraMode2;
+		
+		GameSetLocalPlayerSkills();
+		
+		// remote the local player's camera zoom factor
+		GameSetLocalPlayerCameraExtZoom();
+
+		*pbyteCurrentPlayer = 0;
+		GameSetLocalPlayerAim();
+	} else {
+		// local player
+
+		// CTaskSimpleUseGun::SetPedPosition()
+		(( void (*)(uintptr_t, PED_TYPE*))(g_libGTASA + 0x46D6AC + 1))(thiz, pPed);
+	}
+}
+
+void (*CPed__ProcessControl)(uintptr_t thiz);
+void CPed__ProcessControl_hook(uintptr_t thiz)
+{
+	dwCurPlayerActor = thiz;
+	byteCurPlayer = FindPlayerNumFromPedPtr(dwCurPlayerActor);
+	if(dwCurPlayerActor && (byteCurPlayer != 0))
+	{
+		// save the internal cammode, apply the context.
+		byteSavedCameraMode = *pbyteCameraMode;
+		*pbyteCameraMode = GameGetPlayerCameraMode(byteCurPlayer);
+		
+		// save the second internal cammode, apply the context
+		wSavedCameraMode2 = *wCameraMode2;
+		*wCameraMode2 = GameGetPlayerCameraMode(byteCurPlayer);
+		if(*wCameraMode2 == 4) *wCameraMode2 = 0;
+		
+		// save the camera zoom factor, apply the context
+		GameStoreLocalPlayerCameraExtZoom();
+		GameSetRemotePlayerCameraExtZoom(byteCurPlayer);
+		
+		// aim switching
+		GameStoreLocalPlayerAim();
+		GameSetRemotePlayerAim(byteCurPlayer);
+		
+		// CPed::UpdatePosition nulled from CPed::ProcessControl
+		NOP(g_libGTASA+0x439B7A, 2);
+
+		// call original
+		CPed__ProcessControl(thiz);
+		
+		// restore
+		WriteMemory(g_libGTASA+0x439B7A, (uintptr_t)"\xFA\xF7\x1D\xF8", 4);
+		
+		// restore the skills
+		GameSetLocalPlayerAim();
+		
+		// restore the camera modes.
+		*pbyteCameraMode = byteSavedCameraMode;
+		*wCameraMode2 = wSavedCameraMode2;
+		
+		// remote the local player's camera zoom factor
+		GameSetLocalPlayerCameraExtZoom();
+		
+		*pbyteCurrentPlayer = 0;
+		
+		// restore the local player's keys and the internal ID.
+		GameSetLocalPlayerAim();
+	}
+	else
+	{
+		// LOCAL PLAYER
+		WriteMemory(g_libGTASA+0x4BED92, (uintptr_t)"\x10\x60", 2);
+
+		(*CPed__ProcessControl)(thiz);
+
+		// Reapply the no ped rots from Cam patch
+		WriteMemory(g_libGTASA+0x4BED92, (uintptr_t)"\x00\x46", 2);
+	}
+
+	return;
+}
+
+
+CPatch::InlineHook(g_libGTASA, 0x39E038, &CPad__GetWeapon_hook, &CPad__GetWeapon);
+CPatch::MethodHook(g_libGTASA, 0x5C8610, &CTaskSimpleUseGun__SetPedPosition_hook);				 // CPad::TaskUseGun
+CPatch::InlineHook(g_libGTASA, 0x45A280, &CPed__ProcessControl_hook, &CPed__ProcessControl);
+SetUpHook(g_libGTASA+0x39E498, (uintptr_t)CPad__GetEnterTargeting_hook, (uintptr_t*)&CPad__GetEnterTargeting);
+
+//HOOKS
+uint32_t (*CWeapon_FireInstantHit)(WEAPON_SLOT_TYPE* _this, PED_TYPE* pFiringEntity, VECTOR* vecOrigin, VECTOR* muzzlePos, ENTITY_TYPE* targetEntity, VECTOR *target, VECTOR* originForDriveBy, int arg6, int muzzle);
+uint32_t CWeapon_FireInstantHit_hook(WEAPON_SLOT_TYPE* _this, PED_TYPE* pFiringEntity, VECTOR* vecOrigin, VECTOR* muzzlePos, ENTITY_TYPE* targetEntity, VECTOR *target, VECTOR* originForDriveBy, int arg6, int muzzle)
+{
+	uintptr_t dwRetAddr = 0;
+ 	__asm__ volatile ("mov %0, lr" : "=r" (dwRetAddr));
+
+ 	dwRetAddr -= g_libGTASA;
+ 	if(	dwRetAddr == 0x569A84 + 1 ||
+ 		dwRetAddr == 0x569616 + 1 ||
+ 		dwRetAddr == 0x56978A + 1 ||
+ 		dwRetAddr == 0x569C06 + 1)
+ 	{
+		PED_TYPE *pLocalPed = pGame->FindPlayerPed()->GetGtaActor();
+		if(pLocalPed)
+		{
+			if(pFiringEntity != pLocalPed)
+				return muzzle;
+
+			if(pNetGame)
+			{
+				CPlayerPool *pPlayerPool = pNetGame->GetPlayerPool();
+				if(pPlayerPool)
+				{
+					pPlayerPool->ApplyCollisionChecking();
+				}
+			}
+
+			if(pGame)
+			{
+				CPlayerPed* pPlayerPed = pGame->FindPlayerPed();
+				if(pPlayerPed)
+				{
+					pPlayerPed->FireInstant();
+				}
+			}
+
+			if(pNetGame)
+			{
+				CPlayerPool *pPlayerPool = pNetGame->GetPlayerPool();
+				if(pPlayerPool)
+				{
+					pPlayerPool->ResetCollisionChecking();
+				}
+			}
+
+			return muzzle;
+		}
+ 	}
+
+ 	return CWeapon_FireInstantHit(_this, pFiringEntity, vecOrigin, muzzlePos, targetEntity, target, originForDriveBy, arg6, muzzle);
+}
+
+uint32_t (*CWeapon__FireSniper)(WEAPON_SLOT_TYPE *pWeaponSlot, PED_TYPE *pFiringEntity, ENTITY_TYPE *a3, VECTOR *vecOrigin); 
+uint32_t CWeapon__FireSniper_hook(WEAPON_SLOT_TYPE *pWeaponSlot, PED_TYPE *pFiringEntity, ENTITY_TYPE *a3, VECTOR *vecOrigin) 
+{ 
+    if(GamePool_FindPlayerPed() == pFiringEntity) 
+    { 
+        if(pGame) 
+        { 
+            CPlayerPed* pPlayerPed = pGame->FindPlayerPed(); 
+            if(pPlayerPed) 
+                pPlayerPed->FireInstant(); 
+          } 
+     } 
+    
+    return 1; 
+}
+
+uint32_t (*CTaskSimpleUseGun__FireGun)(uintptr_t thiz, uintptr_t a2, bool a3);
+uint32_t CTaskSimpleUseGun__FireGun_hook(uintptr_t thiz, uintptr_t a2, bool a3)
+{
+    uint32_t result;
+    
+    int iWeaponType = *((uintptr_t*)a2 + 7 * *((unsigned char*)a2 + 1816) + 360);
+    int iWeaponSkill = GetWeaponSkill((PED_TYPE*)a2);
+    int iWeaponInfo = GetWeaponInfo(iWeaponType, iWeaponSkill);
+    if(*((uintptr_t*)thiz + 12) == iWeaponInfo)
+    {
+        char aaa = *((unsigned char*)thiz + 13);
+        if(*((unsigned char*)thiz + 13) & 1)
+        {
+            CTaskSimpleUseGun__FireGun(thiz, a2, 0);
+            aaa = *((unsigned char*)thiz + 13);
+        }
+        if(aaa & 2)
+        {
+            CTaskSimpleUseGun__FireGun(thiz, a2, 1);
+        }
+        
+        result = 0;
+        *((unsigned char*)thiz + 13) = 0;
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
+}
+
+CPatch::InlineHook(g_libGTASA, 0x567964, &CWeapon_FireInstantHit_hook, &CWeapon_FireInstantHit);
+SetUpHook(g_libGTASA+0x56668C, (uintptr_t)CWeapon__FireSniper_hook, (uintptr_t*)&CWeapon__FireSniper);
+SetUpHook(g_libGTASA+0x46D4E4, (uintptr_t)CTaskSimpleUseGun__FireGun_hook, (uintptr_t*)&CTaskSimpleUseGun__FireGun);
+
+//PLAYERPED
+
+uint16_t CPlayerPed::GetKeys(uint16_t *lrAnalog, uint16_t *udAnalog, uint8_t *additionalKey) {
+	*lrAnalog = LocalPlayerKeys.wKeyLR;
+	*udAnalog = LocalPlayerKeys.wKeyUD;
+	uint16_t wRet = 0;
+
+	// KEY_ANALOG_RIGHT
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_ANALOG_RIGHT]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_ANALOG_LEFT
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_ANALOG_LEFT]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_ANALOG_DOWN
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_ANALOG_DOWN]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_ANALOG_UP
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_ANALOG_UP]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_WALK
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_WALK]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_SUBMISSION
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_SUBMISSION]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_WALK
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_WALK]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_SUBMISSION
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_SUBMISSION]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_LOOK_LEFT
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_LOOK_LEFT]) wRet |= 1;
+	wRet <<= 1;
+
+	if (GetCameraMode() == 0x35)
+	{
+		LocalPlayerKeys.bKeys[ePadKeys::KEY_HANDBRAKE] = 1;
+	}
+	else
+	{
+		LocalPlayerKeys.bKeys[ePadKeys::KEY_HANDBRAKE] = 0;
+	}
+
+	// KEY_HANDBRAKE
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_HANDBRAKE]/*true*/) wRet |= 1;
+	wRet <<= 1;
+	// KEY_LOOK_RIGHT
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_LOOK_RIGHT]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_JUMP
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_JUMP]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_SECONDARY_ATTACK
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_SECONDARY_ATTACK]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_SPRINT
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_SPRINT]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_FIRE
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_FIRE]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_CROUCH
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_CROUCH]) wRet |= 1;
+	wRet <<= 1;
+	// KEY_ACTION
+	if(LocalPlayerKeys.bKeys[ePadKeys::KEY_ACTION]) wRet |= 1;
+
+	memset(LocalPlayerKeys.bKeys, 0, ePadKeys::SIZE);
+
+	return wRet;
+}
+
+void CPlayerPed::SetKeys(uint16_t wKeys, uint16_t lrAnalog, uint16_t udAnalog)
+{
+	PAD_KEYS *pad = &RemotePlayerKeys[m_bytePlayerNumber];
+
+	// LEFT/RIGHT
+	pad->wKeyLR = lrAnalog;
+	// UP/DOWN
+	pad->wKeyUD = udAnalog;
+
+	// KEY_ACTION
+	pad->bKeys[ePadKeys::KEY_ACTION] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_CROUCH
+	pad->bKeys[ePadKeys::KEY_CROUCH] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_FIRE
+	pad->bKeys[ePadKeys::KEY_FIRE] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_SPRINT
+	pad->bKeys[ePadKeys::KEY_SPRINT] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_SECONDARY_ATTACK
+	pad->bKeys[ePadKeys::KEY_SECONDARY_ATTACK] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_JUMP
+	pad->bKeys[ePadKeys::KEY_JUMP] = (wKeys & 1);
+	if(!pad->bKeys[ePadKeys::KEY_JUMP]) pad->bIgnoreJump = false;
+	wKeys >>= 1;
+	// KEY_LOOK_RIGHT
+	pad->bKeys[ePadKeys::KEY_LOOK_RIGHT] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_HANDBRAKE
+	pad->bKeys[ePadKeys::KEY_HANDBRAKE] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_LOOK_LEFT
+	pad->bKeys[ePadKeys::KEY_LOOK_LEFT] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_SUBMISSION
+	pad->bKeys[ePadKeys::KEY_SUBMISSION] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_WALK
+	pad->bKeys[ePadKeys::KEY_WALK] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_ANALOG_UP
+	pad->bKeys[ePadKeys::KEY_ANALOG_UP] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_ANALOG_DOWN
+	pad->bKeys[ePadKeys::KEY_ANALOG_DOWN] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_ANALOG_LEFT
+	pad->bKeys[ePadKeys::KEY_ANALOG_LEFT] = (wKeys & 1);
+	wKeys >>= 1;
+	// KEY_ANALOG_RIGHT
+	pad->bKeys[ePadKeys::KEY_ANALOG_RIGHT] = (wKeys & 1);
+
+	return;
+}
+
+
+extern uint32_t (*CWeapon__FireInstantHit)(WEAPON_SLOT_TYPE* thiz, PED_TYPE* pFiringEntity, VECTOR* vecOrigin, VECTOR* muzzlePosn, ENTITY_TYPE* targetEntity, VECTOR *target, VECTOR* originForDriveBy, int arg6, int muzzle);
+extern uint32_t (*CWeapon__FireSniper)(WEAPON_SLOT_TYPE *pWeaponSlot, PED_TYPE *pFiringEntity, ENTITY_TYPE *a3, VECTOR *vecOrigin); 
+
+CPlayerPed *g_pCurrentFiredPed = nullptr;
+BULLET_DATA *g_pCurrentBulletData = nullptr;
+
+void CPlayerPed::FireInstant()
+{
+	if(!IsValidGamePed(m_pPed) || !GamePool_Ped_GetAt(m_dwGTAId))
+		return;
+	
+	uint8_t byteSavedCameraMode;
+	uint16_t wSavedCameraMode2;
+	if(m_bytePlayerNumber) 
+	{
+		byteSavedCameraMode = *pbyteCameraMode;
+		*pbyteCameraMode = GameGetPlayerCameraMode(m_bytePlayerNumber);
+
+		wSavedCameraMode2 = *wCameraMode2;
+		*wCameraMode2 = GameGetPlayerCameraMode(m_bytePlayerNumber);
+		if(*wCameraMode2 == 4) *wCameraMode2 = 0;
+
+		GameStoreLocalPlayerCameraExtZoom();
+		GameSetRemotePlayerCameraExtZoom(m_bytePlayerNumber);
+
+		GameStoreLocalPlayerAim();
+		GameSetRemotePlayerAim(m_bytePlayerNumber);
+
+		GameStoreLocalPlayerSkills();
+    	GameSetRemotePlayerSkills(m_bytePlayerNumber);
+	}
+	else
+	{
+		byteSavedCameraMode = 0;
+		wSavedCameraMode2 = 0;
+	}
+
+	g_pCurrentFiredPed = this;
+
+	if(m_bHaveBulletData)
+		g_pCurrentBulletData = &m_bulletData;
+	else 
+		g_pCurrentBulletData = nullptr;
+
+	WEAPON_SLOT_TYPE* pSlot = GetCurrentWeaponSlot();
+	if(pSlot) 
+	{
+		if(GetCurrentWeapon() == WEAPON_SNIPER) 
+		{
+			if(m_pPed)
+				CWeapon__FireSniper(pSlot, m_pPed, nullptr, nullptr);
+			else 
+				CWeapon__FireSniper(nullptr, m_pPed, nullptr, nullptr);
+		} 
+		else 
+		{
+			VECTOR vecBonePos;
+			VECTOR vecOut;
+
+			GetWeaponInfoForFire(true, &vecBonePos, &vecOut);
+
+			if(m_pPed)
+				CWeapon__FireInstantHit(pSlot, m_pPed, &vecBonePos, &vecOut, nullptr, nullptr, nullptr, 0, 1);
+			else
+				CWeapon__FireInstantHit(nullptr, m_pPed, &vecBonePos, &vecOut, nullptr, nullptr, nullptr, 0, 1);
+		}
+	}
+
+	g_pCurrentFiredPed = nullptr;
+	g_pCurrentBulletData = nullptr;
+
+	if(m_bytePlayerNumber) 
+	{
+		*pbyteCameraMode = byteSavedCameraMode;
+		*wCameraMode2 = wSavedCameraMode2;
+
+		// wCamera2
+		GameSetLocalPlayerCameraExtZoom();
+		GameSetLocalPlayerAim();
+
+		GameSetLocalPlayerSkills();
+	}
+}
+
+CPatch::InlineHook(g_libGTASA, 0x567964, &CWeapon_FireInstantHit_hook, &CWeapon_FireInstantHit);
+
+//LOCALPLAYER.CPP
+PUT THIS ON bool CLocalPlayer::Process()
+
+		// ONFOOT
+		else if(m_pPlayerPed->GetActionTrigger() == ACTION_NORMAL || m_pPlayerPed->GetActionTrigger() == ACTION_SCOPE)
+		{
+			UpdateSurfing();
+			ProcessOnFootWorldBounds();
+
+			if(m_CurrentVehicle != INVALID_VEHICLE_ID)
+			{
+				m_LastVehicle = m_CurrentVehicle;
+				m_CurrentVehicle = INVALID_VEHICLE_ID;
+			}
+
+			if((dwThisTick - m_dwLastSendSyncTick) > (unsigned int)GetOptimumOnFootSendRate())
+			{
+				m_dwLastSendSyncTick = GetTickCount();
+				SendOnFootFullSyncData();
+			}
+
+			uint8_t exKeys = 0;
+			uint16_t lrAnalog, udAnalog;
+			uint16_t wKeys = m_pPlayerPed->GetKeys(&lrAnalog, &udAnalog, &exKeys);
+			
+			if((dwThisTick - m_dwLastSendSyncTick) < NETMODE_HEADSYNC_SENDRATE)
+			{
+				if(IS_TARGETING(wKeys) && IS_FIRING(wKeys))
+				{
+					if(g_iLagCompensation == 2)
+					{
+						if((dwThisTick - m_dwLastSendSyncTick) > iNetModeFiringSendRate)
+						{
+							SendAimSyncData();
+							m_dwLastSendSyncTick = GetTickCount();
+						}
+					}
+					else if((dwThisTick - m_dwLastSendSyncTick) > NETMODE_AIM_SENDRATE)
+					{
+						SendAimSyncData();
+						m_dwLastSendSyncTick = GetTickCount();
+					}
+				}
+				else
+				{
+					if((dwThisTick - m_dwLastSendSyncTick) > NETMODE_HEADSYNC_SENDRATE)
+					{
+						SendAimSyncData();
+						m_dwLastSendSyncTick = GetTickCount();
+					}
+				}
+			}
+		}
